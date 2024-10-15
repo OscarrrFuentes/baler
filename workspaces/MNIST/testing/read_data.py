@@ -4,7 +4,7 @@ import time
 
 start = time.time()
 
-data = np.load("../data/mnist_combined.npz")
+data = np.load("/Users/oscarfuentes/baler/workspaces/MNIST/data/mnist_combined.npz")
 zeros = np.where(data["names"] == 0)[0]
 ones = np.where(data["names"] == 1)[0]
 twos = np.where(data["names"] == 2)[0]
@@ -64,7 +64,10 @@ for color_count, number in enumerate(numbers):
     ax.set_ylabel("Count")
     ax.set_xlabel("Position")
     plt.figure(fig)
-    plt.savefig("output_graphs/" + names[color_count] + "_distribution.png", dpi=600)
+    plt.savefig(
+        "workspaces/MNIST/testing/output_graphs/" + names[color_count] + "_distribution.png",
+        dpi=600,
+    )
     plt.close(fig)
     print(f"{names[color_count]} plotting complete!" + "\n")
 
@@ -72,6 +75,6 @@ tot_ax.set_title("All distributions for each number")
 tot_ax.set_xlabel("Position")
 tot_ax.set_ylabel("Count")
 tot_ax.legend()
-plt.savefig("output_graphs/all_distributions.png", dpi=600)
+plt.savefig("workspaces/MNIST/testing/output_graphs/all_distributions.png", dpi=600)
 plt.close(tot_fig)
 print("\n\n" + f"Time taken {round(time.time() - start, 3)}s")
