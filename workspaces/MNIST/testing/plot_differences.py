@@ -40,7 +40,10 @@ ax.set_title("Root sum square of the differences for every image")
 ax.set_xlabel("Error value")
 ax.set_ylabel("Count")
 
-plt.savefig("workspaces/MNIST/testing/output_graphs/differences/all_differences.png", dpi=600)
+plt.savefig(
+    "workspaces/MNIST/testing/output_graphs/differences/before_train_change/all_differences.png",
+    dpi=600,
+)
 plt.close()
 
 print("Plotted all\n")
@@ -70,7 +73,9 @@ for number in numbers:
     ax.set_xlabel("Error value")
     ax.set_ylabel("Count")
     plt.savefig(
-        "workspaces/MNIST/testing/output_graphs/differences/" + str(number[1]) + "_differences.png",
+        "workspaces/MNIST/testing/output_graphs/differences/before_train_change/"
+        + str(number[1])
+        + "_differences.png",
         dpi=600,
     )
     plt.close()
