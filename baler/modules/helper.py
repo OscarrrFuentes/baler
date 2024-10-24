@@ -172,6 +172,7 @@ class Config:
     l1: bool
     deterministic_algorithm: bool
     dtype: str
+    plot_negative: bool
 
 
 def create_default_config(workspace_name: str, project_name: str) -> str:
@@ -594,6 +595,9 @@ def compress(model_path, config):
     if config.save_error_bounded_deltas:
         print("Total Deltas Found - ", deltas_compressed)
 
+    if config.dtype == "int":
+        compressed = compressed.astype(np.float16)
+
     return (compressed, error_bound_batch, error_bound_deltas, error_bound_index)
 
 
@@ -707,8 +711,25 @@ def decompress(
             (len(decompressed), original_shape[1], original_shape[2])
         )
 
-    if config.dtype == "int":
-        decompressed = np.clip(decompressed, a_min=0, a_max=255).astype(np.uint8)
+    # Changing the decompressed dtype to configured precision
+    try:
+        if config.dtype:
+            try:
+                dtype = np.dtype(config.dtype)
+            except TypeError as _:
+                raise TypeError(f'invalid dtype "{config.dtype}" found in config file') from None
+            if "int" in config.dtype:
+                dtype = np.dtype(config.dtype)
+                info = np.iinfo(dtype)
+                decompressed = np.clip(decompressed, a_min=info.min, a_max=info.max).astype(dtype)
+            elif "float" in config.dtype:
+                dtype = np.dtype(config.dtype)
+                info = np.finfo(dtype)
+                decompressed = np.clip(decompressed, a_min=info.min, a_max=info.max).astype(dtype)
+            else:
+                raise TypeError(f'invalid dtype "{config.dtype}" found in config file')
+    except AttributeError as _:
+        pass
 
     return decompressed, names, normalization_features
 
