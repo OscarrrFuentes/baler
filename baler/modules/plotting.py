@@ -370,15 +370,8 @@ def plot_2D(project_path, config):
         config (dataclass): The config class containing attributes set in the config file
     """
 
-<<<<<<< HEAD
-    data = np.load(config.input_path)["data"].astype(np.float64)
-    data_decompressed = np.load(project_path + "/decompressed_output/decompressed.npz")[
-        "data"
-    ].astype(np.float64)
-=======
     data = np.load(config.input_path)["data"]
     data_decompressed = np.load(project_path + "/decompressed_output/decompressed.npz")["data"]
->>>>>>> plotting_changes
 
     if config.convert_to_blocks:
         data_decompressed = data_decompressed.reshape(data.shape[0], data.shape[1], data.shape[2])
@@ -419,12 +412,8 @@ def plot_2D(project_path, config):
                 max_value = np.amax([np.amax(tile_data), np.amax(tile_data_decompressed)])
                 min_value = np.amin([np.amin(tile_data), np.amin(tile_data_decompressed)])
         except AttributeError as _:
-<<<<<<< HEAD
-            pass
-=======
             max_value = np.amax([np.amax(tile_data), np.amax(tile_data_decompressed)])
             min_value = np.amin([np.amin(tile_data), np.amin(tile_data_decompressed)])
->>>>>>> plotting_changes
 
         fig, axs = plt.subplots(1, 3, figsize=(29.7 * (1 / 2.54), 10 * (1 / 2.54)), sharey=True)
         axs[0].set_title("Original", fontsize=11)

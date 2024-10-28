@@ -184,11 +184,6 @@ def train(model, variables, train_data, test_data, project_path, config):
     intermittent_model_saving = config.intermittent_model_saving
     intermittent_saving_patience = config.intermittent_saving_patience
 
-<<<<<<< HEAD
-    dtype = torch.float32
-
-=======
->>>>>>> plotting_changes
     model_children = list(model.children())
 
     # Initialize model with appropriate device
@@ -201,38 +196,21 @@ def train(model, variables, train_data, test_data, project_path, config):
             # print(train_data.shape)
             # print(test_data.shape)
             # sys.exit()
-<<<<<<< HEAD
-            train_ds = torch.tensor(train_data, dtype=dtype, device=device).view(
+            train_ds = torch.tensor(train_data, dtype=torch.float32, device=device).view(
                 train_data.shape[0], train_data.shape[1] * train_data.shape[2]
             )
-            valid_ds = torch.tensor(test_data, dtype=dtype, device=device).view(
-                test_data.shape[0], test_data.shape[1] * test_data.shape[2]
-            )
-        elif config.model_type == "convolutional" and config.model_name == "Conv_AE_3D":
-            train_ds = torch.tensor(train_data, dtype=dtype, device=device).view(
-=======
-            train_ds = torch.tensor(
-                train_data, dtype=torch.float32, device=device
-            ).view(train_data.shape[0], train_data.shape[1] * train_data.shape[2])
             valid_ds = torch.tensor(test_data, dtype=torch.float32, device=device).view(
                 test_data.shape[0], test_data.shape[1] * test_data.shape[2]
             )
         elif config.model_type == "convolutional" and config.model_name == "Conv_AE_3D":
-            train_ds = torch.tensor(
-                train_data, dtype=torch.float32, device=device
-            ).view(
->>>>>>> plotting_changes
+            train_ds = torch.tensor(train_data, dtype=torch.float32, device=device).view(
                 train_data.shape[0] // bs,
                 1,
                 bs,
                 train_data.shape[1],
                 train_data.shape[2],
             )
-<<<<<<< HEAD
-            valid_ds = torch.tensor(test_data, dtype=dtype, device=device).view(
-=======
             valid_ds = torch.tensor(test_data, dtype=torch.float32, device=device).view(
->>>>>>> plotting_changes
                 train_data.shape[0] // bs,
                 1,
                 bs,
@@ -240,27 +218,15 @@ def train(model, variables, train_data, test_data, project_path, config):
                 train_data.shape[2],
             )
         elif config.model_type == "convolutional":
-<<<<<<< HEAD
-            train_ds = torch.tensor(train_data, dtype=dtype, device=device).view(
+            train_ds = torch.tensor(train_data, dtype=torch.float32, device=device).view(
                 train_data.shape[0], 1, train_data.shape[1], train_data.shape[2]
             )
-            valid_ds = torch.tensor(test_data, dtype=dtype, device=device).view(
-                train_data.shape[0], 1, train_data.shape[1], train_data.shape[2]
-            )
-    elif config.data_dimension == 1:
-        train_ds = torch.tensor(train_data, dtype=dtype, device=device)
-        valid_ds = torch.tensor(test_data, dtype=dtype, device=device)
-=======
-            train_ds = torch.tensor(
-                train_data, dtype=torch.float32, device=device
-            ).view(train_data.shape[0], 1, train_data.shape[1], train_data.shape[2])
             valid_ds = torch.tensor(test_data, dtype=torch.float32, device=device).view(
                 train_data.shape[0], 1, train_data.shape[1], train_data.shape[2]
             )
     elif config.data_dimension == 1:
         train_ds = torch.tensor(train_data, dtype=torch.float64, device=device)
         valid_ds = torch.tensor(test_data, dtype=torch.float64, device=device)
->>>>>>> plotting_changes
 
     # Pushing input data into the torch-DataLoader object and combines into one DataLoader object (a basic wrapper
     # around several DataLoader objects).
@@ -305,13 +271,7 @@ def train(model, variables, train_data, test_data, project_path, config):
 
     # Activate LR Scheduler
     if config.lr_scheduler:
-<<<<<<< HEAD
         lr_scheduler = utils.LRScheduler(optimizer=optimizer, patience=config.lr_scheduler_patience)
-=======
-        lr_scheduler = utils.LRScheduler(
-            optimizer=optimizer, patience=config.lr_scheduler_patience
-        )
->>>>>>> plotting_changes
 
     # Training and Validation of the model
     train_loss = []
@@ -373,13 +333,7 @@ def train(model, variables, train_data, test_data, project_path, config):
         np.save(os.path.join(project_path, "activations.npy"), activations)
 
     print(f"{(end - start) / 60:.3} minutes")
-<<<<<<< HEAD
     np.save(os.path.join(project_path, "loss_data.npy"), np.array([train_loss, val_loss]))
-=======
-    np.save(
-        os.path.join(project_path, "loss_data.npy"), np.array([train_loss, val_loss])
-    )
->>>>>>> plotting_changes
 
     if config.model_type == "convolutional":
         final_layer = model.get_final_layer_dims()

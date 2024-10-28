@@ -73,26 +73,14 @@ def get_arguments():
         "  2. If workspace exists but project does not, create project in workspace.\n"
         "  3. If workspace does not exist, create workspace directory and project.",
     )
-<<<<<<< HEAD
     parser.add_argument("--verbose", dest="verbose", action="store_true", help="Verbose mode")
-=======
-    parser.add_argument(
-        "--verbose", dest="verbose", action="store_true", help="Verbose mode"
-    )
->>>>>>> plotting_changes
     parser.set_defaults(verbose=False)
 
     args = parser.parse_args()
 
     workspace_name = args.project[0]
     project_name = args.project[1]
-<<<<<<< HEAD
     config_path = f"workspaces.{workspace_name}.{project_name}.config.{project_name}_config"
-=======
-    config_path = (
-        f"workspaces.{workspace_name}.{project_name}.config.{project_name}_config"
-    )
->>>>>>> plotting_changes
 
     if args.mode == "newProject":
         config = None
@@ -149,13 +137,7 @@ def create_new_project(
         os.makedirs(directory, exist_ok=True)
 
     # Populate default config
-<<<<<<< HEAD
     with open(os.path.join(project_path, "config", f"{project_name}_config.py"), "w") as f:
-=======
-    with open(
-        os.path.join(project_path, "config", f"{project_name}_config.py"), "w"
-    ) as f:
->>>>>>> plotting_changes
         f.write(create_default_config(workspace_name, project_name))
 
 
@@ -189,11 +171,8 @@ class Config:
     emd: bool
     l1: bool
     deterministic_algorithm: bool
-<<<<<<< HEAD
     dtype: str
     plot_negative: bool
-=======
->>>>>>> plotting_changes
 
 
 def create_default_config(workspace_name: str, project_name: str) -> str:
@@ -285,7 +264,6 @@ def normalize(data, custom_norm):
     Returns:
         ndarray: Normalized data
     """
-<<<<<<< HEAD
     data = np.apply_along_axis(data_processing.normalize, axis=0, arr=data, custom_norm=custom_norm)
     return data
 
@@ -373,101 +351,6 @@ def plotter(output_path, config):
 
     """
 
-=======
-    data = np.apply_along_axis(
-        data_processing.normalize, axis=0, arr=data, custom_norm=custom_norm
-    )
-    return data
-
-
-def process(
-    input_path,
-    custom_norm,
-    test_size,
-    apply_normalization,
-    convert_to_blocks,
-    verbose,
-):
-    """Loads the input data into a ndarray, splits it into train/test splits and normalizes if chosen.
-
-    Args:
-        input_path (string): Path to input data
-        custom_norm (boolean): `False` if you want to use MinMax normalization. `True` otherwise.
-        test_size (float): How much of your data to use as validation.
-        apply_normalization (boolean): `True` if you want to normalize. `False` if you don't want to normalize.
-
-    Returns: ndarray, ndarray, ndarray: Array with the train set, array with the test set and array with the
-    normalization features.
-    """
-    loaded = np.load(input_path)
-    data = loaded["data"]
-
-    if verbose:
-        print("Original Dataset Shape - ", data.shape)
-
-    original_shape = data.shape
-
-    if convert_to_blocks:
-        data = data_processing.convert_to_blocks_util(convert_to_blocks, data)
-
-    normalization_features = data_processing.find_minmax(data)
-    if apply_normalization:
-        print("Normalizing the data...")
-        data = normalize(data, custom_norm)
-    if not test_size:
-        train_set = data
-        test_set = train_set
-    else:
-        train_set, test_set = train_test_split(
-            data, test_size=test_size, random_state=1
-        )
-
-    return (train_set, test_set, normalization_features, original_shape)
-
-
-def renormalize(data, true_min_list, feature_range_list):
-    """Calls `data_processing.renormalize_func()`.
-
-    Args:
-        data (ndarray): Data you wish to un-normalize
-        true_min_list (ndarray): List of column minimums
-        feature_range_list (ndarray): List of column feature ranges
-
-    Returns:
-        ndarray: Un-normalized array
-    """
-    return data_processing.renormalize_func(data, true_min_list, feature_range_list)
-
-
-def train(model, number_of_columns, train_set, test_set, project_path, config):
-    """Calls `training.train()`
-
-    Args:
-        model (modelObject): The model you wish to train
-        number_of_columns (int): Amount of columns in the initial dataset
-        train_set (ndarray): Array consisting of the train set
-        test_set (ndarray): Array consisting of the test set
-        project_path (string): Path to the project directory
-        config (dataClass): Base class selecting user inputs
-
-    Returns:
-        _type_: _description_
-    """
-    return training.train(
-        model, number_of_columns, train_set, test_set, project_path, config
-    )
-
-
-def plotter(output_path, config):
-    """Calls `plotting.plot()`
-
-    Args:
-        output_path (string): Path to the output directory
-        config (dataClass): Base class selecting user inputs
-
-    """
-
->>>>>>> plotting_changes
     plotting.plot(output_path, config)
     print("=== Done ===")
     print("Your plots are available in:", os.path.join(output_path, "plotting"))
@@ -512,15 +395,9 @@ def encoder_decoder_saver(model, encoder_path, decoder_path):
         .pt file: `.pt` File containing the decoder state dictionary
 
     """
-<<<<<<< HEAD
     return data_processing.encoder_saver(model, encoder_path), data_processing.decoder_saver(
         model, decoder_path
     )
-=======
-    return data_processing.encoder_saver(
-        model, encoder_path
-    ), data_processing.decoder_saver(model, decoder_path)
->>>>>>> plotting_changes
 
 
 def detacher(tensor):
@@ -563,19 +440,9 @@ def save_error_bounded_requirement(config, decoded_output, data_batch):
 
     # Ignoring RMS Undefind Values because Ground Truth is Zero
     rms_pred_error[
-<<<<<<< HEAD
         (rms_pred_error == np.inf) | (rms_pred_error == -np.inf) | (rms_pred_error == np.nan)
     ] = 0.0
     rms_pred_error_index = np.where(abs(rms_pred_error) > config.error_bounded_requirement)
-=======
-        (rms_pred_error == np.inf)
-        | (rms_pred_error == -np.inf)
-        | (rms_pred_error == np.nan)
-    ] = 0.0
-    rms_pred_error_index = np.where(
-        abs(rms_pred_error) > config.error_bounded_requirement
-    )
->>>>>>> plotting_changes
     rows_idx, col_idx = rms_pred_error_index
     if len(rows_idx) > 0 and len(col_idx) > 0:
         rms_pred_error_exceeding_error_bound = np.subtract(
@@ -612,13 +479,7 @@ def compress(model_path, config):
     original_shape = data_before.shape
 
     if hasattr(config, "convert_to_blocks") and config.convert_to_blocks:
-<<<<<<< HEAD
         data_before = data_processing.convert_to_blocks_util(config.convert_to_blocks, data_before)
-=======
-        data_before = data_processing.convert_to_blocks_util(
-            config.convert_to_blocks, data_before
-        )
->>>>>>> plotting_changes
 
     if config.apply_normalization:
         print("Normalizing...")
@@ -631,13 +492,7 @@ def compress(model_path, config):
         if config.data_dimension == 1:
             column_names = np.load(config.input_path)["names"]
             number_of_columns = len(column_names)
-<<<<<<< HEAD
             config.latent_space_size = ceil(number_of_columns / config.compression_ratio)
-=======
-            config.latent_space_size = ceil(
-                number_of_columns / config.compression_ratio
-            )
->>>>>>> plotting_changes
             config.number_of_columns = number_of_columns
             n_features = number_of_columns
         elif config.data_dimension == 2:
@@ -740,12 +595,6 @@ def compress(model_path, config):
     if config.save_error_bounded_deltas:
         print("Total Deltas Found - ", deltas_compressed)
 
-<<<<<<< HEAD
-    if config.dtype == "int":
-        compressed = compressed.astype(np.float16)
-
-=======
->>>>>>> plotting_changes
     return (compressed, error_bound_batch, error_bound_deltas, error_bound_index)
 
 
@@ -786,17 +635,8 @@ def decompress(
         )
 
     if config.save_error_bounded_deltas:
-<<<<<<< HEAD
         loaded_deltas = np.load(gzip.GzipFile(input_path_deltas, "r"), allow_pickle=True)
         loaded_batch_indexes = np.load(gzip.GzipFile(input_batch_index, "r"), allow_pickle=True)
-=======
-        loaded_deltas = np.load(
-            gzip.GzipFile(input_path_deltas, "r"), allow_pickle=True
-        )
-        loaded_batch_indexes = np.load(
-            gzip.GzipFile(input_batch_index, "r"), allow_pickle=True
-        )
->>>>>>> plotting_changes
         error_bound_batch = loaded_batch_indexes[0]
         error_bound_deltas = loaded_deltas
         error_bound_index = loaded_batch_indexes[1]
@@ -868,7 +708,6 @@ def decompress(
             (len(decompressed), original_shape[1], original_shape[2])
         )
 
-<<<<<<< HEAD
     # Changing the decompressed dtype to configured precision
     try:
         if config.dtype:
@@ -889,8 +728,6 @@ def decompress(
     except AttributeError as _:
         pass
 
-=======
->>>>>>> plotting_changes
     return decompressed, names, normalization_features
 
 
@@ -1007,10 +844,4 @@ def perform_hls4ml_conversion(output_path, config):
 
     hls_model.compile()
 
-<<<<<<< HEAD
     hls_model.build(csim=config.csim, synth=config.synth, cosim=config.cosim, export=config.export)
-=======
-    hls_model.build(
-        csim=config.csim, synth=config.synth, cosim=config.cosim, export=config.export
-    )
->>>>>>> plotting_changes
