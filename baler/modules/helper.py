@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from math import ceil
 import gzip
 
+import time  #########
+
 from tqdm import tqdm
 
 sys.path.append(os.getcwd())
@@ -173,6 +175,7 @@ class Config:
     deterministic_algorithm: bool
     dtype: str
     plot_negative: bool
+    separate_outliers: bool
 
 
 def create_default_config(workspace_name: str, project_name: str) -> str:
@@ -269,6 +272,7 @@ def normalize(data, custom_norm):
 
 
 def process(
+    config,
     input_path,
     custom_norm,
     test_size,
@@ -289,6 +293,59 @@ def process(
     """
     loaded = np.load(input_path)
     data = loaded["data"]
+
+    if config.separate_outliers:
+        print("Finding outliers...")
+        outliers = []
+        non_outliers = []
+        outlier_names = []
+        non_outlier_names = []
+
+        for count, image in enumerate(data):
+            if (
+                np.any(image[0] > 0)
+                or np.any(image[-1] > 0)
+                or np.any(image.T[0] > 0)
+                or np.any(image.T[-1] > 0)
+            ):
+                outliers.append(image)
+                outlier_names.append(loaded["names"][count])
+            else:
+                non_outliers.append(image)
+                non_outlier_names.append(loaded["names"][count])
+
+            if count % 10000 == 0:
+                print(f"{count} images processed")
+
+        start = time.time()
+        data = np.stack(non_outliers, axis=0)
+        print(f"Took {time.time() - start:.2f}s")
+        original_shape = data.shape
+
+        (
+            config,
+            mode,
+            workspace_name,
+            project_name,
+            verbose,
+        ) = get_arguments()
+        project_path = os.path.join("workspaces", workspace_name, project_name)
+        output_path = os.path.join(project_path, "output")
+        np.savez_compressed(
+            os.path.join(output_path, "compressed_output", "outliers.npz"),
+            data=outliers,
+            names=outlier_names,
+        )
+
+        new_data = np.concatenate((non_outliers, outliers), axis=0)
+        new_names = np.concatenate((non_outlier_names, outlier_names))
+        config.input_path = config.input_path[:-4] + "_outlier_order.npz"
+        np.savez(config.input_path, data=new_data, names=new_names)
+
+        np.savez("temp_data.npz", data=non_outliers, names=non_outlier_names)
+        config.input_path = "temp_data.npz"
+        loaded = np.load("temp_data.npz")
+        data = loaded["data"]
 
     if verbose:
         print("Original Dataset Shape - ", data.shape)
@@ -478,6 +535,57 @@ def compress(model_path, config):
     data_before = loaded["data"]
     original_shape = data_before.shape
 
+    # Separates outliers for MNIST data
+    if config.separate_outliers:
+        print("Finding outliers...")
+        outliers = []
+        non_outliers = []
+        outlier_names = []
+        non_outlier_names = []
+
+        for count, image in enumerate(data_before):
+            if (
+                np.any(image[0] > 0)
+                or np.any(image[-1] > 0)
+                or np.any(image.T[0] > 0)
+                or np.any(image.T[-1] > 0)
+            ):
+                outliers.append(image)
+                outlier_names.append(loaded["names"][count])
+            else:
+                non_outliers.append(image)
+                non_outlier_names.append(loaded["names"][count])
+
+            if count % 10000 == 0:
+                print(f"{count} images processed")
+
+        start = time.time()
+        data_before = np.stack(non_outliers, axis=0)
+        print(f"Took {time.time() - start:.2f}s")
+        original_shape = data_before.shape
+
+        (
+            config,
+            mode,
+            workspace_name,
+            project_name,
+            verbose,
+        ) = get_arguments()
+        project_path = os.path.join("workspaces", workspace_name, project_name)
+        output_path = os.path.join(project_path, "output")
+        np.savez_compressed(
+            os.path.join(output_path, "compressed_output", "outliers.npz"),
+            data=outliers,
+            names=outlier_names,
+        )
+
+        new_data = np.concatenate((non_outliers, outliers), axis=0)
+        new_names = np.concatenate((non_outlier_names, outlier_names))
+        config.input_path = config.input_path[:-4] + "_outlier_order.npz"
+        np.savez(config.input_path, data=new_data, names=new_names)
+
+        loaded = np.load(config.input_path)
+
     if hasattr(config, "convert_to_blocks") and config.convert_to_blocks:
         data_before = data_processing.convert_to_blocks_util(config.convert_to_blocks, data_before)
 
@@ -595,6 +703,9 @@ def compress(model_path, config):
     if config.save_error_bounded_deltas:
         print("Total Deltas Found - ", deltas_compressed)
 
+    if config.dtype == "uint8":
+        compressed = compressed.astype(np.float16)
+
     return (compressed, error_bound_batch, error_bound_deltas, error_bound_index)
 
 
@@ -624,9 +735,12 @@ def decompress(
     """
 
     # Load the data & define necessary variables
+    print(input_path)
     loaded = np.load(input_path)
     data = loaded["data"]
     names = loaded["names"]
+    print(len(data))
+    print(len(names))
     normalization_features = loaded["normalization_features"]
 
     if config.model_type == "convolutional":
@@ -707,6 +821,12 @@ def decompress(
         decompressed = decompressed.reshape(
             (len(decompressed), original_shape[1], original_shape[2])
         )
+
+    if config.separate_outliers:
+        outliers = np.load("workspaces/MNIST/MNIST_project/output/compressed_output/outliers.npz")
+        decompressed = np.concatenate((decompressed, outliers["data"]), axis=0)
+        print(len(decompressed))
+        print(len(names))
 
     # Changing the decompressed dtype to configured precision
     try:
