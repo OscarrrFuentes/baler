@@ -211,23 +211,34 @@ class CFD_dense_AE(nn.Module):
         self.z_dim = z_dim
 
     def encode(self, x):
+<<<<<<< HEAD
 
+=======
+>>>>>>> plotting_changes
         h1 = F.leaky_relu(self.en1(x))
         h2 = F.leaky_relu(self.en2(h1))
         h3 = F.leaky_relu(self.en3(h2))
         return self.en4(h3)
 
     def decode(self, z):
+<<<<<<< HEAD
         h4 = F.leaky_relu(self.de1(z.float()))
+=======
+        h4 = F.leaky_relu(self.de1(z))
+>>>>>>> plotting_changes
         h5 = F.leaky_relu(self.de2(h4))
         h6 = F.leaky_relu(self.de3(h5))
         out = self.de4(h6)
         return out
 
     def forward(self, x):
+<<<<<<< HEAD
         # z = self.encode(torch.clamp(torch.round(x), min=0, max=255))
         z = self.encode(x)
         # return self.decode(torch.clamp(torch.round(z), min=0, max=255))
+=======
+        z = self.encode(x)
+>>>>>>> plotting_changes
         return self.decode(z)
 
     # Implementation of activation extraction using the forward_hook method
@@ -322,8 +333,13 @@ class Conv_AE(nn.Module):
     def __init__(self, n_features, z_dim, *args, **kwargs):
         super(Conv_AE, self).__init__(*args, **kwargs)
 
+<<<<<<< HEAD
         self.q_z_mid_dim = 2500
         self.q_z_output_dim = 20736
+=======
+        self.q_z_mid_dim = 2000
+        self.q_z_output_dim = 128
+>>>>>>> plotting_changes
         self.conv_op_shape = None
 
         # Encoder
@@ -360,7 +376,11 @@ class Conv_AE(nn.Module):
             nn.ReLU(),
             # nn.BatchNorm1d(self.q_z_output_dim),
             nn.Linear(self.q_z_mid_dim, self.q_z_output_dim),
+<<<<<<< HEAD
             nn.ReLU(),
+=======
+            nn.ReLU()
+>>>>>>> plotting_changes
             # nn.BatchNorm1d(42720)
         )
         # Conv Layers
@@ -618,7 +638,11 @@ class Conv_AE_GDN(nn.Module):
             nn.ReLU(),
             # nn.BatchNorm1d(self.q_z_output_dim),
             nn.Linear(self.q_z_mid_dim, self.q_z_output_dim),
+<<<<<<< HEAD
             nn.ReLU(),
+=======
+            nn.ReLU()
+>>>>>>> plotting_changes
             # nn.BatchNorm1d(42720)
         )
         # Conv Layers
@@ -692,8 +716,17 @@ class PJ_Conv_AE(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Linear(500, 2450),
             nn.Unflatten(1, (50, 7, 7)),
+<<<<<<< HEAD
             nn.ConvTranspose2d(50, 20, kernel_size=5, stride=2, padding=2, output_padding=1),
             nn.ConvTranspose2d(20, 1, kernel_size=5, stride=2, padding=2, output_padding=1),
+=======
+            nn.ConvTranspose2d(
+                50, 20, kernel_size=5, stride=2, padding=2, output_padding=1
+            ),
+            nn.ConvTranspose2d(
+                20, 1, kernel_size=5, stride=2, padding=2, output_padding=1
+            ),
+>>>>>>> plotting_changes
             nn.LeakyReLU(0.2),
         )
 
