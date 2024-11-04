@@ -395,8 +395,8 @@ def plot_2D(project_path, config):
         #     tile_data_decompressed = data_decompressed[ind][0]
         # elif config.model_type == "dense":
         #     tile_data_decompressed = data_decompressed[ind][0]
-        tile_data = data[ind]
-        tile_data_decompressed = data_decompressed[ind]
+        tile_data = data[ind].astype(np.float32)
+        tile_data_decompressed = data_decompressed[ind].astype(np.float32)
 
         diff = tile_data - tile_data_decompressed
 
