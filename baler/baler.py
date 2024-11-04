@@ -101,6 +101,7 @@ def perform_training(output_path, config, verbose: bool):
         normalization_features,
         original_shape,
     ) = helper.process(
+        config,
         config.input_path,
         config.custom_norm,
         config.test_size,

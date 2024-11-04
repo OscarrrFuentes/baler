@@ -138,6 +138,8 @@ class AE(nn.Module):
         self.n_features = n_features
         self.z_dim = z_dim
 
+        self.float()
+
     def encode(self, x):
         h1 = F.leaky_relu(self.en1(x))
         h2 = F.leaky_relu(self.en2(h1))
@@ -222,7 +224,9 @@ class CFD_dense_AE(nn.Module):
         return out
 
     def forward(self, x):
+        # z = self.encode(torch.clamp(torch.round(x), min=0, max=255))
         z = self.encode(x)
+        # return self.decode(torch.clamp(torch.round(z), min=0, max=255))
         return self.decode(z)
 
     # Implementation of activation extraction using the forward_hook method
@@ -355,7 +359,7 @@ class Conv_AE(nn.Module):
             nn.ReLU(),
             # nn.BatchNorm1d(self.q_z_output_dim),
             nn.Linear(self.q_z_mid_dim, self.q_z_output_dim),
-            nn.ReLU()
+            nn.ReLU(),
             # nn.BatchNorm1d(42720)
         )
         # Conv Layers
@@ -613,7 +617,7 @@ class Conv_AE_GDN(nn.Module):
             nn.ReLU(),
             # nn.BatchNorm1d(self.q_z_output_dim),
             nn.Linear(self.q_z_mid_dim, self.q_z_output_dim),
-            nn.ReLU()
+            nn.ReLU(),
             # nn.BatchNorm1d(42720)
         )
         # Conv Layers
@@ -687,12 +691,8 @@ class PJ_Conv_AE(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Linear(500, 2450),
             nn.Unflatten(1, (50, 7, 7)),
-            nn.ConvTranspose2d(
-                50, 20, kernel_size=5, stride=2, padding=2, output_padding=1
-            ),
-            nn.ConvTranspose2d(
-                20, 1, kernel_size=5, stride=2, padding=2, output_padding=1
-            ),
+            nn.ConvTranspose2d(50, 20, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.ConvTranspose2d(20, 1, kernel_size=5, stride=2, padding=2, output_padding=1),
             nn.LeakyReLU(0.2),
         )
 
