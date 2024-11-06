@@ -715,12 +715,9 @@ def decompress(
     """
 
     # Load the data & define necessary variables
-    print(input_path)
     loaded = np.load(input_path)
     data = loaded["data"]
     names = loaded["names"]
-    print(len(data))
-    print(len(names))
     normalization_features = loaded["normalization_features"]
 
     if config.model_type == "convolutional":
@@ -805,8 +802,6 @@ def decompress(
     if config.separate_outliers:
         outliers = np.load("workspaces/MNIST/MNIST_project/output/compressed_output/outliers.npz")
         decompressed = np.concatenate((decompressed, outliers["data"]), axis=0)
-        print(len(decompressed))
-        print(len(names))
 
     # Changing the decompressed dtype to configured precision
     try:
