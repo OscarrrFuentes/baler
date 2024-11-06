@@ -151,7 +151,7 @@ class Config:
     compression_ratio: float
     epochs: int
     early_stopping: bool
-    early_stoppin_patience: int
+    early_stopping_patience: int
     lr_scheduler: bool
     lr_scheduler_patience: int
     min_delta: int
