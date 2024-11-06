@@ -6,9 +6,10 @@ import time
 from datetime import timedelta
 import argparse
 import os
-
+import math
 
 DEFUALT_N = 10
+
 
 
 def parse_args():
@@ -35,13 +36,13 @@ def parse_args():
 
 def load_data():
 
-    orig_file = np.load("workspaces/MNIST/data/mnist_combined.npz")
+    orig_file = np.load("/gluster/home/ofrebato/baler/workspaces/MNIST/data/mnist_combined.npz")
     decomp_file = np.load(
-        "workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz"
+        "/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz"
     )
 
     if not np.all(orig_file["names"] == decomp_file["names"]):
-        orig_file = np.load("workspaces/MNIST/data/mnist_combined_outlier_order.npz")
+        orig_file = np.load("/gluster/home/ofrebato/baler/workspaces/MNIST/data/mnist_combined_outlier_order.npz")
 
     orig_data = orig_file["data"].astype(np.float32)
     decomp_data = decomp_file["data"].astype(np.float32)
@@ -104,24 +105,33 @@ def run_mean_fit(error_arr, numbers, result_dict):
 
 
 def run_baler():
-    subprocess.run(
-        ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    subprocess.run(
-        ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    subprocess.run(
-        ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    with open("job.out", "a", encoding="utf-8") as fout, open("job.err", "a", encoding="utf-8") as ferr:
+        res = subprocess.run(
+            ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        fout.write(res.stdout.decode("utf-8"))
+        ferr.write(res.stderr.decode("utf-8"))
+        
+        res = subprocess.run(
+            ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        fout.write(res.stdout.decode("utf-8"))
+        ferr.write(res.stderr.decode("utf-8"))
+        
+        res = subprocess.run(
+            ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        fout.write(res.stdout.decode("utf-8"))
+        ferr.write(res.stderr.decode("utf-8"))
 
 
 def print_time(start, count, total):
@@ -168,7 +178,11 @@ def get_results(n, fit_type):
 
     start = time.time()
 
-    with open("workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+    with open("job.out", "w") as fout, open("job.err", "w") as ferr:
+        fout.write("Starting multiple runs!")
+        ferr.write("Starting multiple runs!")
+
+    with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
         f.write("\n    c.separate_outliers = True")
 
     start_run = True
@@ -194,7 +208,7 @@ def get_results(n, fit_type):
 
         print_time(start, i + 1, 2 * n)
 
-    with open("workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+    with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
         f.write("\n    c.separate_outliers = False")
 
     print("\nSeparating outliers complete!\nRunning including outliers...\n")
@@ -226,8 +240,8 @@ def plot_results(separate_outliers, with_outliers, numbers):
     for number, ax in zip(numbers, axs.flatten()):
         x1 = separate_outliers[number[1]]
         x2 = with_outliers[number[1]]
-        n1, bins1 = np.histogram(x1, bins=len(x1) // 4)
-        n2, bins2 = np.histogram(x2, bins=len(x2) // 4)
+        n1, bins1 = np.histogram(x1, bins=int(np.log(len(x1))))
+        n2, bins2 = np.histogram(x2, bins=int(np.log(len(x2))))
         ax.plot(bins1[:-1], n1, "r-", label="Separate")
         ax.plot(bins2[:-1], n2, "b-", label="With")
         ax.set_xlabel("Chi2 loc", fontsize=16)
@@ -236,6 +250,18 @@ def plot_results(separate_outliers, with_outliers, numbers):
         ax.legend()
     fig.suptitle("Difference of Chi2 location", fontsize=24)
     plt.savefig("all_chi_distributions.png", dpi=900)
+    plt.close()
+    fig, ax = plt.subplots(figsize=(12, 6))
+    start=True
+    for key in separate_outliers.keys():
+        if start:
+            ax.errorbar([key]*len(separate_outliers[key]), separate_outliers[key][:,0], yerr=separate_outliers[key][:,1], color="k", label = "Separating outliers", capsize=3, elinewidth=1, alpha=0.3)
+            ax.errorbar([key]*len(with_outliers[key]), with_outliers[key][:,0], yerr=with_outliers[key][:,1], color="r", label = "Including outliers", capsize=3, elinewidth=1, alpha=0.3)
+            start=False
+        else:
+            ax.errorbar([key]*len(separate_outliers[key]), separate_outliers[key][:,0], yerr=separate_outliers[key][:,1], color="k", capsize=3, elinewidth=1, alpha=0.3)
+            ax.errorbar([key]*len(with_outliers[key]), with_outliers[key][:,0], yerr=with_outliers[key][:,1], color="r", capsize=3, elinewidth=1, alpha=0.3)
+    plt.savefig("All_together.png", dpi=600)
     plt.close()
 
 
