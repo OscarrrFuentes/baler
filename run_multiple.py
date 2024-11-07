@@ -240,8 +240,8 @@ def plot_results(separate_outliers, with_outliers, numbers):
     for number, ax in zip(numbers, axs.flatten()):
         x1 = separate_outliers[number[1]]
         x2 = with_outliers[number[1]]
-        n1, bins1 = np.histogram(x1, bins=int(np.log(len(x1))))
-        n2, bins2 = np.histogram(x2, bins=int(np.log(len(x2))))
+        n1, bins1 = np.histogram(x1, bins=max(int(np.log(len(x1))), len(x1)))
+        n2, bins2 = np.histogram(x2, bins=max(int(np.log(len(x2))), len(x2)))
         ax.plot(bins1[:-1], n1, "r-", label="Separate")
         ax.plot(bins2[:-1], n2, "b-", label="With")
         ax.set_xlabel("Chi2 loc", fontsize=16)
