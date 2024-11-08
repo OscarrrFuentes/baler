@@ -621,8 +621,6 @@ def compress(model_path, config):
             outlier_idxs.append(digit_idxs[digit][distances >= cutoff_distance])
         
         outlier_idxs = np.concatenate(outlier_idxs)
-        print(outlier_idxs[0])
-        print(outlier_idxs.shape)
         outliers = compressed[outlier_idxs]
         outlier_names = loaded["names"][outlier_idxs]
     
@@ -639,21 +637,26 @@ def compress(model_path, config):
         print(f"Saving outliers to: {parent_path}/outliers.npz\nSaving non-outliers to: {parent_path}/non_outliers.npz")
         np.savez_compressed(parent_path + "/outliers.npz", data=outliers, names=outlier_names)
         np.savez(parent_path + "/non_outliers.npz", data=non_outliers, names=non_outlier_names)
-        np.savez(parent_path + "/outlier_order.npz", data=np.vstack((non_outliers, outliers)), names = np.vstack((non_outlier_names, outlier_names)))
-        print(f"\n\nShape of outlier_order.npz: {np.vstack((non_outliers, outliers)).shape}\n\n")
-        config.input_path = parent_path + "/non_outliers.npz"
+        outlier_order_data = np.vstack((non_outliers, outliers))
+        outlier_order_names = np.concatenate((non_outlier_names, outlier_names))
+        np.savez(parent_path + "/outlier_order.npz", data=outlier_order_data, names=outlier_order_names)
+        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write(f"\n    c.input_path = \"/gluster/home/ofrebato/baler/{parent_path}/non_outliers.npz\"")
 
         print("\nDecompressing original data and saving...\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"])
-        data = np.load("workspaces/MNIST_MNIST_project/decompressed_output/decompressed.npz")
-        np.savez("workspaces/MNIST_MNIST_project/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
+        data = np.load("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz")
+        np.savez("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
 
         print("\nRe-training model with separate outliers...\n\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"])
 
-        config.separate_outliers = False
+        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write("\n    c.separate_outliers = False")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
-        config.separate_outliers = True
+        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write("\n    c.separate_outliers = True")
+        print("Done!")
 
 
     return (compressed, error_bound_batch, error_bound_deltas, error_bound_index)
@@ -769,9 +772,9 @@ def decompress(
             (len(decompressed), original_shape[1], original_shape[2])
         )
 
-    if config.separate_outliers:
-        outliers = np.load("workspaces/MNIST/MNIST_project/output/compressed_output/outliers.npz")
-        decompressed = np.concatenate((decompressed, outliers["data"]), axis=0)
+    # if config.separate_outliers:
+    #     outliers = np.load("workspaces/MNIST/MNIST_project/output/compressed_output/outliers.npz")
+    #     decompressed = np.concatenate((decompressed, outliers["data"]), axis=0)
 
     # Changing the decompressed dtype to configured precision
     try:
