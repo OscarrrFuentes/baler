@@ -21,6 +21,7 @@ from math import ceil
 import gzip
 
 import time  #########
+import subprocess #######
 
 from tqdm import tqdm
 
@@ -294,49 +295,6 @@ def process(
     loaded = np.load(input_path)
     data = loaded["data"]
 
-    if config.separate_outliers:
-        print("Finding outliers...")
-
-        outlier_mask = (
-            (data[:, 0, :] > 0) | (data[:, -1, :] > 0) | (data[:, :, 0] > 0) | (data[:, :, -1] > 0)
-        )
-
-        outlier_mask = np.any(outlier_mask, axis=1)
-
-        outliers = data[outlier_mask]
-        non_outliers = data[~outlier_mask]
-
-        outlier_names = np.array(loaded["names"])[outlier_mask]
-        non_outlier_names = np.array(loaded["names"])[~outlier_mask]
-
-        data_before = np.stack(non_outliers, axis=0)
-        original_shape = data_before.shape
-
-        (
-            config,
-            mode,
-            workspace_name,
-            project_name,
-            verbose,
-        ) = get_arguments()
-        project_path = os.path.join("workspaces", workspace_name, project_name)
-        output_path = os.path.join(project_path, "output")
-        np.savez_compressed(
-            os.path.join(output_path, "compressed_output", "outliers.npz"),
-            data=outliers,
-            names=outlier_names,
-        )
-
-        new_data = np.concatenate((non_outliers, outliers), axis=0)
-        new_names = np.concatenate((non_outlier_names, outlier_names))
-        config.input_path = config.input_path[:-4] + "_outlier_order.npz"
-        np.savez(config.input_path, data=new_data, names=new_names)
-
-        np.savez("temp_data.npz", data=non_outliers, names=non_outlier_names)
-        config.input_path = "temp_data.npz"
-        loaded = np.load("temp_data.npz")
-        data = loaded["data"]
-
     if verbose:
         print("Original Dataset Shape - ", data.shape)
 
@@ -525,50 +483,6 @@ def compress(model_path, config):
     data_before = loaded["data"]
     original_shape = data_before.shape
 
-    # Separates outliers for MNIST data
-    if config.separate_outliers:
-        print("Finding outliers...")
-
-        outlier_mask = (
-            (data_before[:, 0, :] > 0)
-            | (data_before[:, -1, :] > 0)
-            | (data_before[:, :, 0] > 0)
-            | (data_before[:, :, -1] > 0)
-        )
-
-        outlier_mask = np.any(outlier_mask, axis=1)
-
-        outliers = data_before[outlier_mask]
-        non_outliers = data_before[~outlier_mask]
-
-        outlier_names = np.array(loaded["names"])[outlier_mask]
-        non_outlier_names = np.array(loaded["names"])[~outlier_mask]
-
-        data_before = np.stack(non_outliers, axis=0)
-        original_shape = data_before.shape
-
-        (
-            config,
-            mode,
-            workspace_name,
-            project_name,
-            verbose,
-        ) = get_arguments()
-        project_path = os.path.join("workspaces", workspace_name, project_name)
-        output_path = os.path.join(project_path, "output")
-        np.savez_compressed(
-            os.path.join(output_path, "compressed_output", "outliers.npz"),
-            data=outliers,
-            names=outlier_names,
-        )
-
-        new_data = np.concatenate((non_outliers, outliers), axis=0)
-        new_names = np.concatenate((non_outlier_names, outlier_names))
-        config.input_path = config.input_path[:-4] + "_outlier_order.npz"
-        np.savez(config.input_path, data=new_data, names=new_names)
-
-        loaded = np.load(config.input_path)
-
     if hasattr(config, "convert_to_blocks") and config.convert_to_blocks:
         data_before = data_processing.convert_to_blocks_util(config.convert_to_blocks, data_before)
 
@@ -685,6 +599,62 @@ def compress(model_path, config):
 
     if config.save_error_bounded_deltas:
         print("Total Deltas Found - ", deltas_compressed)
+    
+    if config.separate_outliers:
+        print("Finding outliers...")
+        print(f"Latent space shape: {compressed.shape}")
+
+        digit_idxs = {}
+        digit_means = []
+        digit_covs = []
+        outlier_idxs = []
+        for digit in range(10):
+            digit_idxs[digit] = np.where(loaded["names"] == digit)[0]
+            mean_vec = np.mean(compressed[digit_idxs[digit]], axis=0)
+            cov_vec = np.cov(compressed[digit_idxs[digit]], rowvar=0)
+            digit_means.append(mean_vec)
+            digit_covs.append(cov_vec)
+
+            distances = np.linalg.norm(compressed[digit_idxs[digit]] - mean_vec, axis=1)
+            cutoff_index = int(len(distances) * 0.01) # Outliers defined as furthest 1% from the mean
+            cutoff_distance = np.partition(distances, -cutoff_index)[-cutoff_index]
+            outlier_idxs.append(digit_idxs[digit][distances >= cutoff_distance])
+        
+        outlier_idxs = np.concatenate(outlier_idxs)
+        print(outlier_idxs[0])
+        print(outlier_idxs.shape)
+        outliers = compressed[outlier_idxs]
+        outlier_names = loaded["names"][outlier_idxs]
+    
+        outlier_mask = np.ones(len(compressed), dtype=bool)
+        outlier_mask[outlier_idxs] = False
+        non_outliers = compressed[outlier_mask]
+        non_outlier_names = loaded["names"][outlier_mask]
+    
+        print(f"Number of outliers: {len(outliers)}")
+        print(f"Non-outlier number: {len(non_outliers)}")
+
+        parent_path = "/".join(config.input_path.split("/")[:-1])
+
+        print(f"Saving outliers to: {parent_path}/outliers.npz\nSaving non-outliers to: {parent_path}/non_outliers.npz")
+        np.savez_compressed(parent_path + "/outliers.npz", data=outliers, names=outlier_names)
+        np.savez(parent_path + "/non_outliers.npz", data=non_outliers, names=non_outlier_names)
+        np.savez(parent_path + "/outlier_order.npz", data=np.vstack((non_outliers, outliers)), names = np.vstack((non_outlier_names, outlier_names)))
+        print(f"\n\nShape of outlier_order.npz: {np.vstack((non_outliers, outliers)).shape}\n\n")
+        config.input_path = parent_path + "/non_outliers.npz"
+
+        print("\nDecompressing original data and saving...\n")
+        subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"])
+        data = np.load("workspaces/MNIST_MNIST_project/decompressed_output/decompressed.npz")
+        np.savez("workspaces/MNIST_MNIST_project/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
+
+        print("\nRe-training model with separate outliers...\n\n")
+        subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"])
+
+        config.separate_outliers = False
+        subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
+        config.separate_outliers = True
+
 
     return (compressed, error_bound_batch, error_bound_deltas, error_bound_index)
 
