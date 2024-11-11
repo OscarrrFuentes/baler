@@ -290,7 +290,9 @@ def perform_compression(output_path, config, verbose: bool):
 
     names = np.load(config.input_path)["names"]
 
-    if config.extra_compression:
+    if config.separate_outliers:
+        pass
+    elif config.extra_compression:
         if verbose:
             print("Extra compression selected")
             print(
