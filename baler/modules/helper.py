@@ -482,6 +482,7 @@ def compress(model_path, config):
     loaded = np.load(config.input_path)
     data_before = loaded["data"]
     original_shape = data_before.shape
+    print(config.input_path)
 
     if hasattr(config, "convert_to_blocks") and config.convert_to_blocks:
         data_before = data_processing.convert_to_blocks_util(config.convert_to_blocks, data_before)
@@ -621,18 +622,25 @@ def compress(model_path, config):
             outlier_idxs.append(digit_idxs[digit][distances >= cutoff_distance])
         
         outlier_idxs = np.concatenate(outlier_idxs)
-        outliers = compressed[outlier_idxs]
+        outliers = loaded["data"][outlier_idxs]
         outlier_names = loaded["names"][outlier_idxs]
     
         outlier_mask = np.ones(len(compressed), dtype=bool)
         outlier_mask[outlier_idxs] = False
-        non_outliers = compressed[outlier_mask]
+        non_outliers = loaded["data"][outlier_mask]
         non_outlier_names = loaded["names"][outlier_mask]
     
         print(f"Number of outliers: {len(outliers)}")
         print(f"Non-outlier number: {len(non_outliers)}")
 
         parent_path = "/".join(config.input_path.split("/")[:-1])
+
+        normalization_features = []
+
+        if config.apply_normalization:
+            normalization_features = np.load(
+                os.path.join("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/output", "training", "normalization_features.npy")
+            )
 
         print(f"Saving outliers to: {parent_path}/outliers.npz\nSaving non-outliers to: {parent_path}/non_outliers.npz")
         np.savez_compressed(parent_path + "/outliers.npz", data=outliers, names=outlier_names)
@@ -641,21 +649,23 @@ def compress(model_path, config):
         outlier_order_names = np.concatenate((non_outlier_names, outlier_names))
         np.savez(parent_path + "/outlier_order.npz", data=outlier_order_data, names=outlier_order_names)
         with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-            f.write(f"\n    c.input_path = \"/gluster/home/ofrebato/baler/{parent_path}/non_outliers.npz\"")
+            f.write(f"\n    c.input_path = \"/gluster/home/ofrebato/baler/workspaces/MNIST/data/outlier_order.npz\"")
+            f.write(f"\n    c.separate_outliers = False")
+        subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
 
         print("\nDecompressing original data and saving...\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"])
         data = np.load("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz")
         np.savez("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
 
+        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write(f"\n    c.input_path = \"/gluster/home/ofrebato/baler/workspaces/MNIST/data/non_outliers.npz\"")
         print("\nRe-training model with separate outliers...\n\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"])
 
-        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-            f.write("\n    c.separate_outliers = False")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
-        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-            f.write("\n    c.separate_outliers = True")
+        # with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+        #     f.write("\n    c.separate_outliers = True")
         print("Done!")
 
 
@@ -796,6 +806,7 @@ def decompress(
     except AttributeError as _:
         pass
 
+    print(decompressed.shape)
     return decompressed, names, normalization_features
 
 
