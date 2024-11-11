@@ -41,8 +41,11 @@ def load_data():
         "/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz"
     )
 
-    if not np.all(orig_file["names"] == decomp_file["names"]):
-        orig_file = np.load("/gluster/home/ofrebato/baler/workspaces/MNIST/data/mnist_combined_outlier_order.npz")
+    try:
+        if not np.all(orig_file["names"] == decomp_file["names"]):
+            orig_file = np.load("/gluster/home/ofrebato/baler/workspaces/MNIST/data/outlier_order.npz")
+    except ValueError:
+        orig_file = np.load("/gluster/home/ofrebato/baler/workspaces/MNIST/data/non_outliers.npz")
 
     orig_data = orig_file["data"].astype(np.float32)
     decomp_data = decomp_file["data"].astype(np.float32)
@@ -178,15 +181,12 @@ def get_results(n, fit_type):
 
     start = time.time()
 
-    with open("job.out", "w") as fout, open("job.err", "w") as ferr:
-        fout.write("Starting multiple runs!")
-        ferr.write("Starting multiple runs!")
-
     with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
         f.write("\n    c.separate_outliers = True")
 
     start_run = True
     df_dict = {}
+    outlier_length = 0
 
     for i in range(n):
         run_baler()
@@ -195,9 +195,9 @@ def get_results(n, fit_type):
         numbers = get_numbers(names)
 
         if fit_type == "chi2":
-            if start_run:
-                df_dict = get_df_set(diff_arr, numbers)
-                start_run = False
+            # if start_run:
+            #     df_dict = get_df_set(diff_arr, numbers)
+            #     start_run = False
             errors = np.array([np.sum(image**2) for image in diff_arr])
             separate_outliers = run_chi2_fit(errors, numbers, separate_outliers, df_dict)
         elif fit_type == "mean":
@@ -205,11 +205,19 @@ def get_results(n, fit_type):
             separate_outliers = run_mean_fit(errors, numbers, separate_outliers)
         else:
             raise ValueError("fit can only be mean or chi2")
+        if start_run:
+            with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+                f.write("\n    c.separate_outliers = False")
+            outlier_length = len(errors)
+            print(f"\nNUMBER OF OUTLIERS: {outlier_length}\n")
+            start -= (time.time() - start)/2 #Had to do two trainings for the first one
+            start_run=False
 
         print_time(start, i + 1, 2 * n)
 
     with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-        f.write("\n    c.separate_outliers = False")
+        f.write("\n    c.input_path = \"/gluster/home/ofrebato/baler/workspaces/MNIST/data/outlier_order.npz\"")
+        f.write("\n    c.separate_outliers=False")
 
     print("\nSeparating outliers complete!\nRunning including outliers...\n")
 
@@ -235,37 +243,39 @@ def get_results(n, fit_type):
     return separate_outliers, with_outliers, numbers
 
 
-def plot_results(separate_outliers, with_outliers, numbers):
-    fig, axs = plt.subplots(nrows=2, ncols=5, figsize=(22, 10), sharey=True, sharex=True)
-    for number, ax in zip(numbers, axs.flatten()):
-        x1 = separate_outliers[number[1]]
-        x2 = with_outliers[number[1]]
-        n1, bins1 = np.histogram(x1, bins=max(int(np.log(len(x1))), len(x1)))
-        n2, bins2 = np.histogram(x2, bins=max(int(np.log(len(x2))), len(x2)))
-        ax.plot(bins1[:-1], n1, "r-", label="Separate")
-        ax.plot(bins2[:-1], n2, "b-", label="With")
-        ax.set_xlabel("Chi2 loc", fontsize=16)
-        ax.set_ylabel("Count", fontsize=16)
-        ax.set_title(number[1], fontsize=20)
-        ax.legend()
-    fig.suptitle("Difference of Chi2 location", fontsize=24)
-    plt.savefig("all_chi_distributions.png", dpi=900)
-    plt.close()
+def plot_results(separate_outliers, with_outliers, numbers, n):
     fig, ax = plt.subplots(figsize=(12, 6))
     start=True
     for key in separate_outliers.keys():
         if start:
-            ax.errorbar([key]*len(separate_outliers[key]), separate_outliers[key][:,0], yerr=separate_outliers[key][:,1], color="k", label = "Separating outliers", capsize=3, elinewidth=1, alpha=0.3)
+            ax.errorbar([key]*len(separate_outliers[key]), separate_outliers[key][:,0], yerr=separate_outliers[key][:,1], color="k", label="Separating outliers", capsize=3, elinewidth=1, alpha=0.3)
             ax.errorbar([key]*len(with_outliers[key]), with_outliers[key][:,0], yerr=with_outliers[key][:,1], color="r", label = "Including outliers", capsize=3, elinewidth=1, alpha=0.3)
             start=False
         else:
             ax.errorbar([key]*len(separate_outliers[key]), separate_outliers[key][:,0], yerr=separate_outliers[key][:,1], color="k", capsize=3, elinewidth=1, alpha=0.3)
             ax.errorbar([key]*len(with_outliers[key]), with_outliers[key][:,0], yerr=with_outliers[key][:,1], color="r", capsize=3, elinewidth=1, alpha=0.3)
-    plt.savefig("All_together.png", dpi=600)
+    ax.legend()
+    ax.set_xlabel("Digit")
+    ax.set_ylabel("Mean distance")
+    fig.suptitle("Baler improvement from separating outliers")
+    plt.savefig("All_mean_distances.png", dpi=600)
     plt.close()
 
+    fig, ax = plt.subplots(figsize=(12, 6))
+    for key in separate_outliers.keys():
+        ax.errorbar(key, np.mean(separate_outliers[key][:,0]), yerr=np.std(separate_outliers[key][:,0]), color="k", label="Separating outliers", capsize=3, elinewidth=1)
+        ax.errorbar(key, np.mean(with_outliers[key][:,0]), yerr=np.std(with_outliers[key][:,0]), color="r", label="Including outliers", capsize=3, elinewidth=1)
+    ax.legend()
+    ax.set_xlabel("Digit")
+    ax.set_ylabel("Mean distance")
+    fig.suptitle(f"Baler improvement from separating outliers mean value, repetitions = {n}")
+    plt.savefig("Mean_mean_distances.png", dpi=600)
+    plt.close()
 
 def main():
+    with open("job.out", "w", encoding="utf-8") as fout:
+        fout.write("Starting multiple runs...")
+
     args = parse_args()
     print(f"Starting run...\nRepetitions: {args.repetitions}" + f"\nFit type: {args.fit}")
 
@@ -286,7 +296,7 @@ def main():
             "run_multiple_results/results.npz", separate=separate_outliers, including=with_outliers
         )
 
-    plot_results(separate_outliers, with_outliers, numbers)
+    plot_results(separate_outliers, with_outliers, numbers, args.repetitions)
 
 
 main()
