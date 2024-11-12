@@ -189,6 +189,7 @@ def get_results(n, fit_type):
     outlier_length = 0
 
     for i in range(n):
+        print("\nFinding outliers...\n")
         run_baler()
         orig_data, decomp_data, names = load_data()
         diff_arr = (orig_data - decomp_data).astype(np.float32)
@@ -209,8 +210,8 @@ def get_results(n, fit_type):
             with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
                 f.write("\n    c.separate_outliers = False")
             outlier_length = len(errors)
-            print(f"\nNUMBER OF OUTLIERS: {outlier_length}\n")
-            start -= (time.time() - start)/2 #Had to do two trainings for the first one
+            print(f"\nNumber of outliers: {70000 - outlier_length}\n")
+            start += (time.time() - start)/2 #Had to do two trainings for the first one
             start_run=False
 
         print_time(start, i + 1, 2 * n)
