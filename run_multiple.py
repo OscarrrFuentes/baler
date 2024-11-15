@@ -7,6 +7,8 @@ from datetime import timedelta
 import argparse
 import os
 import math
+import importlib
+from baler.modules.helper import Config
 
 DEFUALT_N = 10
 CWD = os.getcwd()
@@ -112,33 +114,33 @@ def run_mean_fit(error_arr, numbers, result_dict):
 
 
 def run_baler():
-# with open("job.out", "a", encoding="utf-8") as fout, open("job.err", "a", encoding="utf-8") as ferr:
-    res = subprocess.run(
-        ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    # fout.write(res.stdout.decode("utf-8"))
-    # ferr.write(res.stderr.decode("utf-8"))
-    
-    res = subprocess.run(
-        ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    # fout.write(res.stdout.decode("utf-8"))
-    # ferr.write(res.stderr.decode("utf-8"))
-    
-    res = subprocess.run(
-        ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    # fout.write(res.stdout.decode("utf-8"))
-    # ferr.write(res.stderr.decode("utf-8"))
+    with open("job.all_output", "a", encoding="utf-8") as fout, open("job.err", "a", encoding="utf-8") as ferr:
+        res = subprocess.run(
+            ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        fout.write(res.stdout.decode("utf-8"))
+        fout.write(res.stderr.decode("utf-8"))
+        
+        res = subprocess.run(
+            ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        fout.write(res.stdout.decode("utf-8"))
+        fout.write(res.stderr.decode("utf-8"))
+        
+        res = subprocess.run(
+            ["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        fout.write(res.stdout.decode("utf-8"))
+        fout.write(res.stderr.decode("utf-8"))
 
 
 def print_time(start, count, total):
@@ -167,6 +169,11 @@ def get_df_set(diff_arr, numbers):
 
 
 def get_results(n, fit_type, verbose):
+    config = Config
+    config_path = f"workspaces.MNIST.MNIST_project.config.MNIST_project_config"
+    importlib.import_module(config_path).set_config(config)
+    config.epochs=50
+
     digits_spelled = [
         "zero",
         "one",
@@ -225,7 +232,7 @@ def get_results(n, fit_type, verbose):
                 print(key, f"Mean: {separate_outliers[key][i][0]:.2f}\tStd: {separate_outliers[key][i][1]:.2f}")
 
     with open(CWD+"/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-        f.write("\n    c.input_path = \""+CWD+"/workspaces/MNIST/data/outlier_order.npz\"")
+        f.write(f"\n    c.input_path = \"{CWD}/workspaces/MNIST/data/outlier_order.npz\"")
         f.write("\n    c.separate_outliers=False")
 
     print("\nSeparating outliers complete!\nRunning including outliers...\n")
@@ -325,7 +332,7 @@ def plot_results(separate_outliers, with_outliers, numbers, n):
     plt.savefig("Hist_mean_distances.png")
 
 def main():
-    with open("job.out", "w", encoding="utf-8") as fout:
+    with open("job.all_output", "w", encoding="utf-8") as fout:
         fout.write("Starting multiple runs...")
 
     args = parse_args()

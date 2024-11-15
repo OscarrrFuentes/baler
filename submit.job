@@ -8,6 +8,6 @@ when_to_transfer_output = ON_EXIT
 Log = /gluster/home/ofrebato/baler/job.log
 Output = /gluster/home/ofrebato/baler/job.out
 Error = /gluster/home/ofrebato/baler/job.err
-request_gpus = 1
+request_gpus = 2
 request_memory = 11000
 Queue
