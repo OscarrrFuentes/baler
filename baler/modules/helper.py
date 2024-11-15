@@ -602,8 +602,10 @@ def compress(model_path, config):
         print("Total Deltas Found - ", deltas_compressed)
     
     if config.separate_outliers:
+        cwd = os.getcwd()
         print("Finding outliers...")
         print(f"Latent space shape: {compressed.shape}")
+        print(f"Compress() cwd: {cwd}")
 
         digit_idxs = {}
         digit_means = []
@@ -633,8 +635,6 @@ def compress(model_path, config):
         print(f"Number of outliers: {len(outliers)}")
         print(f"Non-outlier number: {len(non_outliers)}")
 
-        parent_path = "/".join(config.input_path.split("/")[:-1])
-
         normalization_features = []
 
         if config.apply_normalization:
@@ -642,24 +642,24 @@ def compress(model_path, config):
                 os.path.join("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/output", "training", "normalization_features.npy")
             )
 
-        print(f"Saving outliers to: {parent_path}/outliers.npz\nSaving non-outliers to: {parent_path}/non_outliers.npz")
-        np.savez_compressed(parent_path + "/outliers.npz", data=outliers, names=outlier_names)
-        np.savez(parent_path + "/non_outliers.npz", data=non_outliers, names=non_outlier_names)
+        print(f"Saving outliers to: {cwd}/workspaces/MNIST/data/outliers.npz\nSaving non-outliers to: {cwd}/workspaces/MNIST/data/non_outliers.npz")
+        np.savez_compressed(cwd + "/workspaces/MNIST/data/outliers.npz", data=outliers, names=outlier_names)
+        np.savez(cwd + "/workspaces/MNIST/data/non_outliers.npz", data=non_outliers, names=non_outlier_names)
         outlier_order_data = np.vstack((non_outliers, outliers))
         outlier_order_names = np.concatenate((non_outlier_names, outlier_names))
-        np.savez(parent_path + "/outlier_order.npz", data=outlier_order_data, names=outlier_order_names)
-        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-            f.write(f"\n    c.input_path = \"/gluster/home/ofrebato/baler/workspaces/MNIST/data/outlier_order.npz\"")
+        np.savez(cwd + "/workspaces/MNIST/data/outlier_order.npz", data=outlier_order_data, names=outlier_order_names)
+        with open(cwd + "/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write(f"\n    c.input_path = \"+"+cwd+"/workspaces/MNIST/data/outlier_order.npz\"")
             f.write(f"\n    c.separate_outliers = False")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
 
         print("\nDecompressing original data and saving...\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"])
         data = np.load("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz")
-        np.savez("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
+        np.savez(cwd+"/workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
 
-        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-            f.write(f"\n    c.input_path = \"/gluster/home/ofrebato/baler/workspaces/MNIST/data/non_outliers.npz\"")
+        with open(cwd+"/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write(f"\n    c.input_path = \""+cwd+"/workspaces/MNIST/data/non_outliers.npz\"")
         print("\nRe-training model with separate outliers...\n\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"])
 
