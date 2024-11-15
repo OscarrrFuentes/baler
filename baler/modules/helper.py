@@ -600,7 +600,7 @@ def compress(model_path, config):
 
     if config.save_error_bounded_deltas:
         print("Total Deltas Found - ", deltas_compressed)
-    
+
     if config.separate_outliers:
         cwd = os.getcwd()
         print("Finding outliers...")
@@ -639,7 +639,7 @@ def compress(model_path, config):
 
         if config.apply_normalization:
             normalization_features = np.load(
-                os.path.join("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/output", "training", "normalization_features.npy")
+                os.path.join(cwd+"/workspaces/MNIST/MNIST_project/output", "training", "normalization_features.npy")
             )
 
         print(f"Saving outliers to: {cwd}/workspaces/MNIST/data/outliers.npz\nSaving non-outliers to: {cwd}/workspaces/MNIST/data/non_outliers.npz")
@@ -649,13 +649,13 @@ def compress(model_path, config):
         outlier_order_names = np.concatenate((non_outlier_names, outlier_names))
         np.savez(cwd + "/workspaces/MNIST/data/outlier_order.npz", data=outlier_order_data, names=outlier_order_names)
         with open(cwd + "/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-            f.write(f"\n    c.input_path = \"+"+cwd+"/workspaces/MNIST/data/outlier_order.npz\"")
+            f.write(f"\n    c.input_path = \""+cwd+"/workspaces/MNIST/data/outlier_order.npz\"")
             f.write(f"\n    c.separate_outliers = False")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
 
         print("\nDecompressing original data and saving...\n")
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "decompress"])
-        data = np.load("workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz")
+        data = np.load(cwd+"/workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz")
         np.savez(cwd+"/workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed_with_outliers.npz", data=data["data"], names=data["names"])
 
         with open(cwd+"/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
