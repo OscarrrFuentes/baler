@@ -22,12 +22,13 @@ export POETRY_VIRTUALENVS_IN_PROJECT=true
 poetry install --no-root
 
 # Run for a given batch size
-python run_multiple.py -n 2 -s run_multiple_results/result_${BATCH_SIZE}.npz -b ${BATCH_SIZE} > /gluster/home/ofrebato/baler/job_${BATCH_SIZE}.out 2>&1
+python run_multiple.py -n 32 -s run_multiple_results/result_${BATCH_SIZE}.npz -b ${BATCH_SIZE} > job_${BATCH_SIZE}.out 2>&1
 
 # Copy results to home directory
 cp run_multiple_results/result_${BATCH_SIZE}.npz /gluster/home/ofrebato/baler/run_multiple_results/results_${BATCH_SIZE}.npz
-cp Hist_mean_distances.png /gluster/home/ofrebato/baler/hist_mean_distances_${BATCH_SIZE}.png
-cp mean_mean_distances.png /gluster/home/ofrebato/baler/mean_mean_distances_${BATCH_SIZE}.png
-cp All_mean_distances.png /gluster/home/ofrebato/baler/all_mean_distances_${BATCH_SIZE}.png
+cp Hist_mean_distances.png /gluster/home/ofrebato/baler/hist_mean_distance/hist_mean_distances_${BATCH_SIZE}.png
+cp Mean_mean_distances.png /gluster/home/ofrebato/baler/mean_mean_distance/mean_mean_distances_${BATCH_SIZE}.png
+cp All_mean_distances.png /gluster/home/ofrebato/baler/all_mean_distance/all_mean_distances_${BATCH_SIZE}.png
+cat job_${BATCH_SIZE}.out >> /gluster/home/ofrebato/baler/job.all_output
 
 echo "COMPLETED RUN_SCRIPT.SH"
