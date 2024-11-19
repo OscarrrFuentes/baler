@@ -2,19 +2,23 @@ Universe = vanilla
 Executable = /gluster/home/ofrebato/baler/run_script.sh
 Arguments = $(BATCH_SIZE)
 transfer_input_files = /gluster/home/ofrebato/baler/pyproject.toml, /gluster/home/ofrebato/.cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9/bin/activate, /gluster/home/ofrebato/.cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9/bin/python3, /gluster/home/ofrebato/baler/workspaces/MNIST/data/mnist_combined.npz, /gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py
-transfer_output_files = job_${BATCH_SIZE}.out, job_${BATCH_SIZE}.err, job_${BATCH_SIZE}.log, job.all_output
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
-Log = /gluster/home/ofrebato/baler/job.log
-Output = /gluster/home/ofrebato/baler/job.out
-Error = /gluster/home/ofrebato/baler/job.err
+Log = job_$(BATCH_SIZE).log
+Output = job_$(BATCH_SIZE).out
+Error = job_$(BATCH_SIZE).err
 request_cpus = 1
 request_disk = 6000000
 request_memory = 30000
 Queue BATCH_SIZE from (
+    5000
+    4000
+    3000
     2000
     1500
     1000
+    750
     500
     250
+    100
 )
