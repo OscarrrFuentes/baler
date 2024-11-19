@@ -6,10 +6,25 @@ import time
 from datetime import timedelta
 import argparse
 import os
-
+import sys
+from pathlib import Path
 
 DEFUALT_N = 10
 CWD = os.getcwd()
+
+config_path = Path(CWD+"/workspaces/MNIST/MNIST_project/config")
+helper_path = Path(CWD+"/baler/modules")
+baler_path = Path(CWD)
+
+if str(config_path) not in sys.path:
+    sys.path.append(str(config_path))
+if str(helper_path) not in sys.path:
+    sys.path.append(str(helper_path))
+if str(baler_path) not in sys.path:
+    sys.path.append(str(baler_path))
+
+from baler.modules.helper import Config
+import MNIST_project_config as pc
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -264,6 +279,9 @@ def get_results(n, fit_type, verbose, batch_size):
 
 
 def plot_results(separate_outliers, with_outliers, numbers, n):
+    config=Config
+    pc.set_config(config)
+
     fig, ax = plt.subplots(figsize=(12, 6))
     start=True
     for key in separate_outliers.keys():
@@ -277,7 +295,8 @@ def plot_results(separate_outliers, with_outliers, numbers, n):
     ax.legend()
     ax.set_xlabel("Digit")
     ax.set_ylabel("Mean distance")
-    fig.suptitle("Baler improvement from separating outliers")
+    ax.grid(color="silver", alpha=0.5)
+    fig.suptitle(f"Baler improvement from separating outliers. Epochs={config.epochs}, Batch size={config.batch_size}, Repetitions={n}")
     plt.savefig("All_mean_distances.png", dpi=600)
     plt.close()
 
@@ -300,7 +319,8 @@ def plot_results(separate_outliers, with_outliers, numbers, n):
     ax.legend()
     ax.set_xlabel("Digit")
     ax.set_ylabel("Mean distance")
-    fig.suptitle(f"Baler improvement from separating outliers mean value, repetitions = {n}", fontsize=18)
+    ax.grid(color="silver", alpha=0.5)
+    fig.suptitle(f"Mean Baler improvement from separating outliers. Epochs={config.epochs}, Batch size={config.batch_size}, Repetitions={n}\nMean improvement = {np.mean(perc_diffs):.3f}% $\pm$ {np.std(perc_diffs):.3f}%", fontsize=18)
     plt.savefig("Mean_mean_distances.png", dpi=600)
     plt.close()
 
@@ -321,10 +341,11 @@ def plot_results(separate_outliers, with_outliers, numbers, n):
         std_inc = np.std(with_outliers[key][:,0])
         ax.axvline(x=mean_inc, color="darkorange", linestyle="dashed")
         ax.axvspan(mean_inc-std_inc, mean_inc+std_inc, alpha=0.15, color="darkorange")
+        ax.grid(color="silver", alpha=0.5)
 
         ax.legend()
 
-    fig.suptitle("Distributions of mean distances from original images", fontsize=24)
+    fig.suptitle(f"Distributions of mean distances from original images. Epochs={config.epochs}, Batch size={config.batch_size}, Repetitions={n}", fontsize=24)
     plt.savefig("Hist_mean_distances.png")
 
 def main():
