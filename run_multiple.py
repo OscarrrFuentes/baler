@@ -6,9 +6,7 @@ import time
 from datetime import timedelta
 import argparse
 import os
-import math
-import importlib
-from baler.modules.helper import Config
+
 
 DEFUALT_N = 10
 CWD = os.getcwd()
@@ -29,7 +27,7 @@ def parse_args():
         help="Specify how you want to fit the histogram of differences, choice between 'mean' and 'chi2' (default: mean)",
     )
     parser.add_argument(
-        "-s", "--save", action="store_true", help="Flag whether to save the results or not"
+        "-s", "--savename", default = "run_multiple_results/results.npz", help="Results filename"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Print verbose output"
@@ -168,11 +166,9 @@ def get_df_set(diff_arr, numbers):
     return df_set
 
 
-def get_results(n, fit_type, verbose):
-    config = Config
-    config_path = f"workspaces.MNIST.MNIST_project.config.MNIST_project_config"
-    importlib.import_module(config_path).set_config(config)
-    config.epochs=50
+def get_results(n, fit_type, verbose, batch_size):
+    with open(CWD+"/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+        f.write(f"\n    c.batch_size = {batch_size}")
 
     digits_spelled = [
         "zero",
@@ -336,9 +332,10 @@ def main():
         fout.write("Starting multiple runs...")
 
     args = parse_args()
-    print(f"Starting run...\nRepetitions: {args.repetitions}" + f"\nFit type: {args.fit}")
+    print(f"Starting run...\nRepetitions: {args.repetitions}" + f"\nFit type: {args.fit}"\
+          +f"\nBatch size: {args.batch_size}")
 
-    separate_outliers, with_outliers, numbers = get_results(args.repetitions, args.fit, args.verbose)
+    separate_outliers, with_outliers, numbers = get_results(args.repetitions, args.fit, args.verbose, args.batch_size)
     print("    separate:::with")
 
     for i in separate_outliers.keys():
@@ -346,14 +343,13 @@ def main():
         with_mean = np.mean(with_outliers[i])
         print(f"{i}: {sep_mean:.2f}:::{with_mean:.2f}")
 
-    if args.save:
-        print("\nSaving results to run_multiple_results/results.npz...\n")
+    print(f"\nSaving results to {args.savename}...\n")
 
-        if not os.path.exists("run_multiple_results"):
-            os.mkdir("run_multiple_results")
-        np.savez_compressed(
-            "run_multiple_results/results.npz", separate=separate_outliers, including=with_outliers
-        )
+    if not os.path.exists("run_multiple_results"):
+        os.mkdir("run_multiple_results")
+    np.savez_compressed(
+        args.savename, separate=separate_outliers, including=with_outliers
+    )
 
     plot_results(separate_outliers, with_outliers, numbers, args.repetitions)
 
