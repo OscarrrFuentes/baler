@@ -1,0 +1,75 @@
+Universe = vanilla
+Executable = /gluster/home/ofrebato/baler/get_losses.sh
+Arguments = $(BATCH_SIZE)
+transfer_input_files = /gluster/home/ofrebato/baler/pyproject.toml, /gluster/home/ofrebato/.cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9/bin/activate, /gluster/home/ofrebato/.cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9/bin/python3, /gluster/home/ofrebato/baler/workspaces/MNIST/data/mnist_combined.npz, /gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT_OR_EVICT
+Log = loss_job.log
+Output = loss_job_$(BATCH_SIZE).out
+Error = loss_job_$(BATCH_SIZE).err
+request_cpus = 1
+request_disk = 6000000
+request_memory = 30000
+Queue BATCH_SIZE from (
+	100
+	115
+	130
+	145
+	160
+	175
+	190
+	205
+	220
+	235
+	250
+	265
+	280
+	295
+	310
+	325
+	340
+	355
+	370
+	385
+	400
+	415
+	430
+	445
+	460
+	475
+	490
+	505
+	520
+	535
+	550
+	565
+	580
+	595
+	610
+	625
+	640
+	655
+	670
+	685
+	700
+	715
+	730
+	745
+	760
+	775
+	790
+	805
+	820
+	835
+	850
+	865
+	880
+	895
+	910
+	925
+	940
+	955
+	970
+	985
+	1000
+)
