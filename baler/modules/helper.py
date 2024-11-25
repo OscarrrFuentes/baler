@@ -177,6 +177,7 @@ class Config:
     dtype: str
     plot_negative: bool
     separate_outliers: bool
+    outlier_proportion: float
 
 
 def create_default_config(workspace_name: str, project_name: str) -> str:
@@ -619,7 +620,11 @@ def compress(model_path, config):
             digit_covs.append(cov_vec)
 
             distances = np.linalg.norm(compressed[digit_idxs[digit]] - mean_vec, axis=1)
-            cutoff_index = int(len(distances) * 0.01) # Outliers defined as furthest 1% from the mean
+
+            if hasattr(config, "outlier_proportion"):
+                cutoff_index = int(len(distances) * config.outlier_proportion)
+            else:
+                cutoff_index = int(len(distances) * 0.01) # Outliers defined as furthest 1% from the mean
             cutoff_distance = np.partition(distances, -cutoff_index)[-cutoff_index]
             outlier_idxs.append(digit_idxs[digit][distances >= cutoff_distance])
         
@@ -664,8 +669,8 @@ def compress(model_path, config):
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"])
 
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
-        # with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
-        #     f.write("\n    c.separate_outliers = True")
+        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+            f.write("\n    c.separate_outliers = True\n    c.input_path = \"workspaces/MNIST/data/mnist_combined.npz\"")
         print("Done!")
 
 
