@@ -10,12 +10,6 @@ def parse_args():
     args = parse.parse_args()
     return args
 
-def human_readable_size(size_in_bytes):
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size_in_bytes < 1024:
-            return f"{size_in_bytes:.2f} {unit}"
-        size_in_bytes /= 1024
-
 def mean_perc_diff(args):
     perc_diffs = []
     cwd = os.getcwd()
@@ -28,13 +22,14 @@ def mean_perc_diff(args):
         mean_separated = np.mean(sep_data[:,0])
         perc_diffs.append((mean_including - mean_separated) * 100/mean_including)
     
-    file_size = os.path.getsize(os.path.join(cwd, "workspaces/MNIST/data/outliers.npz"))
-    file_size = human_readable_size(file_size*4)
+    outlier_file_size = os.path.getsize(os.path.join(cwd, "workspaces/MNIST/data/outliers.npz")) * 4
+    compressed_file_size = os.path.getsize(os.path.join(cwd, "workspaces/MNIST/MNIST_project/output/compressed_output/compressed.npz"))
+    
 
-    with open(os.path.join(child_wd, "full_results.txt"), "a") as f:
-        f.write(f"{args.proportion}, {file_size}, {np.mean(perc_diffs)}, {np.std(perc_diffs)}\n")
+    with open(os.path.join("/gluster/home/ofrebato/baler/outlier_proportion_testing/full_results.txt"), "a") as f:
+        f.write(f"{args.proportion}, {outlier_file_size}, {compressed_file_size}, {np.mean(perc_diffs)}, {np.std(perc_diffs)}\n")
         print("Written results to file")
-        print(file_size)
+        print(outlier_file_size, compressed_file_size)
     
     return 0
 

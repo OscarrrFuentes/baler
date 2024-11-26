@@ -9,6 +9,10 @@ echo $PATH
 mkdir -p .cache/pypoetry/virtualenvs/
 cp -r /gluster/home/ofrebato/.cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9 .cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9
 
+#Logging
+mkdir logs
+PARENT_DIR=$PWD
+
 # Copy baler
 cp -r /gluster/home/ofrebato/baler baler
 cd baler
@@ -27,6 +31,10 @@ CONFIG_FILE="$PWD/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py"
 
 >"/gluster/home/ofrebato/baler/outlier_proportion_testing/full_results.txt"
 
+mkdir -p "$PWD/outlier_proportion_testing/results"
+rm -rf "$PWD/outlier_proportion_testing/results/*"
+echo $PWD
+
 for ((i=0; i<=9; i+=1))
 do
     >"$PWD/outlier_proportion_testing/results/sep_$i.txt"
@@ -36,7 +44,7 @@ done
 # Append the batch size to the config file
 echo -e "\n    c.outlier_proportion = $OUTLIER_PROPORTION" >> $CONFIG_FILE
 
-for ((i=0; i<=1; i+=1))
+for ((i=0; i<=60; i+=1))
 do
 # Run the training and compression with the current batch size
     poetry run baler --project MNIST MNIST_project --mode train
@@ -47,6 +55,11 @@ do
 done
 
 python outlier_proportion_testing/outlier_proportion_analysis.py --proportion $OUTLIER_PROPORTION
+
+cp -r $PARENT_DIR/logs /gluster/home/ofrebato/baler/logs
+
+mkdir -p /gluster/home/ofrebato/baler/outlier_proportion_testing/results/$OUTLIER_PROPORTION
+cp -r $PWD/outlier_proportion_testing/results/* /gluster/home/ofrebato/baler/outlier_proportion_testing/results/$OUTLIER_PROPORTION
 
 
 

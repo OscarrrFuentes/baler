@@ -14,21 +14,29 @@ def load_data(args):
 
     if args.sep:
         decomp_filename = os.path.join(cwd, "workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed.npz")
+        orig_filename = os.path.join(cwd, "workspaces/MNIST/data/non_outliers.npz")
     else:
         decomp_filename = os.path.join(cwd, "workspaces/MNIST/MNIST_project/output/decompressed_output/decompressed_with_outliers.npz")
-    orig_filename = os.path.join(cwd, "workspaces/MNIST/data/non_outliers.npz")
+        orig_filename = os.path.join(cwd, "workspaces/MNIST/data/outlier_order.npz")
 
     orig_file = np.load(orig_filename)
     decomp_file = np.load(decomp_filename)
 
-    min_length = min(len(orig_file["names"]), len(decomp_file["names"]))
+    min_length = len(np.load(os.path.join(cwd, "workspaces/MNIST/data/non_outliers.npz"))["data"])
+    print(f"min length: {min_length}")
 
     orig_file = {"data": orig_file["data"][:min_length], "names": orig_file["names"][:min_length]}
     decomp_file = {"data": decomp_file["data"][:min_length], "names": decomp_file["names"][:min_length]}
     
     if not np.all(orig_file["names"] == decomp_file["names"]):
-        print("Wrong filename used :(")
-        return -1
+        print(f"\n\n\n\nWrong filename used :(\norig_filename{orig_filename}\ndecomp_filename: {decomp_filename}\nargs.sep{args.sep}\n\n\n\n")
+        print("Trying outlier_order.npz")
+        orig_filename = os.path.join(cwd, "workspaces/MNIST/data/outlier_order.npz")
+        orig_file = np.load(orig_filename)
+        if np.all(orig_file["names"][:min_length] == decomp_file["names"]):
+            print("That somehow worked")
+        else:
+            raise FileNotFoundError(f"{len(np.where(orig_file['names'][:min_length] != decomp_file['names']))} were wrong")
 
     return orig_file, decomp_file
 
@@ -37,8 +45,9 @@ def calculate_distance(orig_file, decomp_file, args):
     digits = list(range(10))
     results = {}
 
-    diff_arr = orig_file["data"] - decomp_file["data"]
+    diff_arr = orig_file["data"].astype(np.float32) - decomp_file["data"].astype(np.float32)
     distances = np.array([np.sqrt(np.sum(image**2)) for image in diff_arr])
+    print(f"\nlen(distances): {len(distances)}\n")
 
     for digit in digits:
         digit_distances = distances[np.where(orig_file["names"] == digit)]
