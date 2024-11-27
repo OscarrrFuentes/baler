@@ -214,7 +214,7 @@ def get_results(n, fit_type, verbose, batch_size):
     for i in range(n):
         run_baler()
         orig_data, decomp_data, names = load_data()
-        diff_arr = (orig_data - decomp_data).astype(np.float32)
+        diff_arr = orig_data.astype(np.float32) - decomp_data.astype(np.float32)
         numbers = get_numbers(names)
 
         if fit_type == "chi2":
@@ -308,7 +308,7 @@ def plot_results(separate_outliers, with_outliers, numbers, n):
         mean_separated = np.mean(separate_outliers[key][:,0])
         std_separated = np.std(separate_outliers[key][:,0])
 
-        ax.errorbar(key, mean_separated, yerr=std_separated, fmt="bx", markersize=3, capsize=3, elinewidth=1)
+        ax.errorbar(key, mean_separated, yerr=std_separated, fmt="bx", capsize=3, elinewidth=1)
         ax.errorbar(key, mean_including, yerr=std_including, fmt="rx", capsize=3, elinewidth=1)
         perc_diff = (mean_including - mean_separated) * 100 / mean_including
         perc_diffs.append(perc_diff)
