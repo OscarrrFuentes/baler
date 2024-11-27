@@ -2,6 +2,15 @@
 !/workspaces/public_datasets
 !workspaces/CMS_project_v1/CMS_project_v1/config/CMS_project_v1_config.py
 !workspaces/CFD_workspace/CFD_project_animation/config/CFD_project_animation_config.py
+!workspaces/MNIST/MNIST_project/config/MNIST_project_config.py
+!workspaces/MNIST/testing
+/mean_mean_distance
+/hist_mean_distance
+/all_mean_distance
+/loss_datas
+job*
+/outlier_proportion_testing/results/*
+/run_multiple_results
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
