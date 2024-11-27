@@ -669,7 +669,7 @@ def compress(model_path, config):
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "train"])
 
         subprocess.run(["poetry", "run", "baler", "--project", "MNIST", "MNIST_project", "--mode", "compress"])
-        with open("/gluster/home/ofrebato/baler/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
+        with open(cwd+"/workspaces/MNIST/MNIST_project/config/MNIST_project_config.py", "a") as f:
             f.write("\n    c.separate_outliers = True\n    c.input_path = \"workspaces/MNIST/data/mnist_combined.npz\"")
         print("Done!")
 
