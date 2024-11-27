@@ -3,9 +3,9 @@ def set_config(c):
     c.compression_ratio = 10
     # c.number_of_columns = 24
     # c.latent_space_size = 15
-    c.epochs = 100
+    c.epochs = 80
     c.early_stopping = False
-    c.early_stoMNping_patience = 100
+    c.early_stopping_patience = 10
     c.min_delta = 0
     c.lr_scheduler = True
     c.lr_scheduler_patience = 50
@@ -16,7 +16,7 @@ def set_config(c):
     c.reg_param = 0.001
     c.RHO = 0.05
     c.lr = 0.001
-    c.batch_size = 6000
+    c.batch_size = 500
     c.test_size = 0
     c.data_dimension = 2
     c.apply_normalization = False
@@ -30,3 +30,7 @@ def set_config(c):
     c.error_bounded_requirement = 1
     c.convert_to_blocks = False
     c.separate_model_saving = False
+
+    c.plot_negative=True
+    c.dtype="uint8"
+    c.separate_outliers=True
