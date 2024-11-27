@@ -97,7 +97,7 @@ def fit(
         running_loss += loss.item()
 
     epoch_loss = running_loss / (idx + 1)
-    print(f"# Finished. Training Loss: {loss:.6f}")
+    print(f"# Finished. Training Loss: {epoch_loss:.6f}")
     return epoch_loss, mse_loss, l1_loss, model
 
 
