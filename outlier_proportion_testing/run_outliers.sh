@@ -44,7 +44,7 @@ done
 # Append the batch size to the config file
 echo -e "\n    c.outlier_proportion = $OUTLIER_PROPORTION" >> $CONFIG_FILE
 
-for ((i=0; i<=60; i+=1))
+for ((i=0; i<=32; i+=1))
 do
 # Run the training and compression with the current batch size
     poetry run baler --project MNIST MNIST_project --mode train

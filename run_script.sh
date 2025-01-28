@@ -20,9 +20,10 @@ export POETRY_VIRTUALENVS_IN_PROJECT=true
 
 # Install Poetry and dependencies
 poetry install --no-root
+source /gluster/home/ofrebato/.cache/pypoetry/virtualenvs/baler-O7HYjMIZ-py3.9/bin/activate
 
 # Run for a given batch size
-python run_multiple.py -n 32 -s run_multiple_results/result_${BATCH_SIZE}.npz -b ${BATCH_SIZE} > job_${BATCH_SIZE}.out 2>&1
+python run_multiple.py -n 32 -s $PWD/run_multiple_results/result_${BATCH_SIZE}.npz -b ${BATCH_SIZE} > job_${BATCH_SIZE}.out 2>&1
 
 # Copy results to home directory
 cp run_multiple_results/result_${BATCH_SIZE}.npz /gluster/home/ofrebato/baler/run_multiple_results/results_${BATCH_SIZE}.npz

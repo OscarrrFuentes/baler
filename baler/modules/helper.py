@@ -609,29 +609,30 @@ def compress(model_path, config):
         print(f"Compress() cwd: {cwd}")
 
         digit_idxs = {}
-        digit_means = []
+        digit_means = {}
         digit_covs = []
         outlier_idxs = []
+        distances = []
         for digit in range(10):
             digit_idxs[digit] = np.where(loaded["names"] == digit)[0]
             mean_vec = np.mean(compressed[digit_idxs[digit]], axis=0)
             cov_vec = np.cov(compressed[digit_idxs[digit]], rowvar=0)
-            digit_means.append(mean_vec)
+            digit_means[digit] = mean_vec
             digit_covs.append(cov_vec)
-
-            distances = np.linalg.norm(compressed[digit_idxs[digit]] - mean_vec, axis=1)
-
-            if hasattr(config, "outlier_proportion"):
-                cutoff_index = int(len(distances) * config.outlier_proportion)
-            else:
-                cutoff_index = int(len(distances) * 0.01) # Outliers defined as furthest 1% from the mean
-            cutoff_distance = np.partition(distances, -cutoff_index)[-cutoff_index]
-            outlier_idxs.append(digit_idxs[digit][distances >= cutoff_distance])
         
-        outlier_idxs = np.concatenate(outlier_idxs)
+        for image, name in zip(compressed, loaded["names"]):
+            distances.append((np.sqrt(np.sum((image - digit_means[name])**2)), name))
+
+        distances = np.array(distances)
+        if hasattr(config, "outlier_proportion"):
+            cutoff_index = int(len(distances) * (1 - config.outlier_proportion))
+        else:
+            cutoff_index = int(len(distances) * (1 - 0.01)) # Outliers defined as furthest 1% from the mean
+        cutoff_distance = np.partition(distances[:,0], cutoff_index)[cutoff_index]
+        outlier_idxs = np.where(distances[:,0] >= cutoff_distance)
+
         outliers = loaded["data"][outlier_idxs]
         outlier_names = loaded["names"][outlier_idxs]
-    
         outlier_mask = np.ones(len(compressed), dtype=bool)
         outlier_mask[outlier_idxs] = False
         non_outliers = loaded["data"][outlier_mask]

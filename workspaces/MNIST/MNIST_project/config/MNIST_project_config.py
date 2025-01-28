@@ -16,7 +16,7 @@ def set_config(c):
     c.reg_param = 0.001
     c.RHO = 0.05
     c.lr = 0.001
-    c.batch_size = 500
+    c.batch_size = 256
     c.test_size = 0
     c.data_dimension = 2
     c.apply_normalization = False
@@ -33,4 +33,4 @@ def set_config(c):
 
     c.plot_negative=True
     c.dtype="uint8"
-    c.separate_outliers=True
+    c.separate_outliers=False
