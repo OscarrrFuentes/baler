@@ -1,11 +1,11 @@
 def set_config(c):
-    c.input_path = "/gluster/home/ofrebato/baler/workspaces/higgs/data/13TeV_combined_cut_numpy.npz"
-    c.compression_ratio = 10
+    c.input_path = "/gluster/home/ofrebato/baler/workspaces/higgs/data/13TeV_photon_pt.npz"
+    c.compression_ratio = 1.5
     # c.number_of_columns = 24
     # c.latent_space_size = 15
     c.epochs = 100
-    c.early_stopping = False
-    c.early_stopping_patience = 100
+    c.early_stopping = True
+    c.early_stopping_patience = 5
     c.min_delta = 0
     c.lr_scheduler = True
     c.lr_scheduler_patience = 50
