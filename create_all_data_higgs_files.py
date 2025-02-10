@@ -1,6 +1,7 @@
 import uproot
 import numpy as np
 import pandas as pd
+import time
 
 
 def filter_len_2(series):
@@ -23,7 +24,10 @@ all_etas = np.empty((0, 2))
 all_phis = np.empty((0, 2))
 all_Es = np.empty((0, 2))
 
-for path in samples:
+for path, letter in zip(samples, ["A", "B", "C", "D"]):
+    print(f"Processing data {letter}")
+    start = time.time()
+
     with uproot.open(path + ":mini") as t:
         tree = t
 
@@ -36,6 +40,8 @@ for path in samples:
         all_etas = np.vstack((all_etas, filter_len_2(data.photon_eta)))
         all_phis = np.vstack((all_phis, filter_len_2(data.photon_phi)))
         all_Es = np.vstack((all_Es, filter_len_2(data.photon_E)))
+
+    print(f"Finished processing {letter}\nTook {time.time() - start:.2f}s\n")
 
 np.savez(save_path + "/photon_pts.npz", data=all_pts, names=["photon_pt1", "photon_pt2"])
 np.savez(save_path + "/photon_etas.npz", data=all_etas, names=["photon_eta1", "photon_eta2"])
