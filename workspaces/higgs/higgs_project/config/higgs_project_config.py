@@ -1,6 +1,6 @@
 def set_config(c):
-    c.input_path = "/gluster/home/ofrebato/baler/workspaces/higgs/data/13TeV_photon_pt.npz"
-    c.compression_ratio = 1.5
+    c.input_path = "workspaces/higgs/data/13TeV_photon_pt.npz"
+    c.compression_ratio = 5
     # c.number_of_columns = 24
     # c.latent_space_size = 15
     c.epochs = 100
